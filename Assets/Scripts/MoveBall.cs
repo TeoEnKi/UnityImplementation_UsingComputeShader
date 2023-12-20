@@ -1,27 +1,40 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
 public class MoveBall : MonoBehaviour
 {
+    [NonSerialized]
     public bool enableBall;
-    [SerializeField] float moveSpeed = 5f;
-    [SerializeField] float ySpeed = 5f;
 
     float x = 0;
-    [SerializeField] float y = 0;
+    float y = 0;
     float z = 0;
 
     private Camera mainCamera;
     private float CameraZDistance;
 
-    Vector3 oldPos;
+    SphereCollider sphereCollider;
+    MeshRenderer meshRenderer;
 
-    void Start()
+    [Header("Movement")]
+    public float moveSpeed = 5f;
+    public float ySpeed = 5f;
+
+    private void Awake()
     {
         mainCamera = Camera.main;
-        CameraZDistance =
-            mainCamera.WorldToScreenPoint(transform.position).z; //z axis of the game object for screen view
+        CameraZDistance = mainCamera.WorldToScreenPoint(transform.position).z; //z axis of the game object for screen view
+
+        sphereCollider = GetComponent<SphereCollider>();
+        meshRenderer = GetComponent<MeshRenderer>();
+
+    }
+    private void Start()
+    {
+        sphereCollider.enabled = enableBall;
+        meshRenderer.enabled = enableBall;
     }
     private void Update()
     {
@@ -42,41 +55,38 @@ public class MoveBall : MonoBehaviour
         {
             y = 0;
         }
+        if (Input.GetMouseButton(0))
+        {
+            if (!enableBall) return;
+            Vector3 ScreenPosition =
+                new Vector3(Input.mousePosition.x, Input.mousePosition.y, CameraZDistance); //z axis added to screen point 
+            Vector3 NewWorldPosition =
+                mainCamera.ScreenToWorldPoint(ScreenPosition); //Screen point converted to world point
 
-        transform.position += new Vector3(x, y * ySpeed, z) * moveSpeed * Time.deltaTime;
+            transform.position = NewWorldPosition;
+        }
+        transform.position += new Vector3(x * moveSpeed, y * ySpeed, z * moveSpeed) * Time.deltaTime;
 
-    }
-    private void LateUpdate()
-    {
-        oldPos = transform.position;
     }
     //https://gist.github.com/seferciogluecce/132e136ed71834143100f14b9b86b9fa
-    void OnMouseDrag()
-    {
-        if (!enableBall) return;
-        Vector3 ScreenPosition =
-            new Vector3(Input.mousePosition.x, Input.mousePosition.y, CameraZDistance); //z axis added to screen point 
-        Vector3 NewWorldPosition =
-            mainCamera.ScreenToWorldPoint(ScreenPosition); //Screen point converted to world point
-
-        transform.position = NewWorldPosition;
-    }
     public void OnClick()
     {
         enableBall = !enableBall;
+        Debug.Log(enableBall);
 
         TMP_Text moveBallBtn = EventSystem.current.currentSelectedGameObject.GetComponentInChildren<TMP_Text>();
         if (enableBall)
         {
             moveBallBtn.text = "Disable Ball";
+            sphereCollider.enabled = true;
+            meshRenderer.enabled = true;
         }
         else
         {
             moveBallBtn.text = "Enable Ball";
+            sphereCollider.enabled = false;
+            meshRenderer.enabled = false;
         }
     }
-    public Vector3 moveDir()
-    {
-        return transform.position - oldPos;
-    }
+
 }

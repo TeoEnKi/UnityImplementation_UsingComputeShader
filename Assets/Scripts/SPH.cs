@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 //instances of this struct can be converted into a stream of bytes to send to custom shader
 [System.Serializable]
@@ -18,6 +20,9 @@ public struct Particle
 
 public class SPH : MonoBehaviour
 {
+    [Header("Sphere Vars")]
+    [SerializeField] MoveBall moveball;
+
     [Header("Particle Spawn")]
     public bool showSpheres = true;
     //number of particles to spawn at each axis
@@ -54,7 +59,7 @@ public class SPH : MonoBehaviour
     public float viscosityStrength = 200f;
     public float pressureMultiplier = 1.2f;
     public float particleMass = 2.5f;
-    public float restingDensity = 300.0f; // Water
+    public float restingDensity = 300.0f;
     public float timeStep = 0.007f;
 
     //store and manage arguement data
@@ -95,6 +100,17 @@ public class SPH : MonoBehaviour
     }
     private void FixedUpdate()
     {
+        if (moveball != null)
+        {
+            if (moveball.enabled)
+            {
+                shader.SetBool("sphereEnabled", moveball.enableBall);
+                shader.SetVector("spherePos", moveball.transform.position);
+                shader.SetFloat("sphereSpeedXZ", moveball.moveSpeed);
+                shader.SetFloat("sphereSpeedY", moveball.ySpeed);
+                shader.SetFloat("sphereRadius", moveball.transform.localScale.x / 2);
+            }
+        }
 
         boxSize = boundary.boxSize;
         boxSpawn = boundary.transform.position;
@@ -120,9 +136,6 @@ public class SPH : MonoBehaviour
 
     }
 
-    //TODO:
-    //include the user inputs and set density and pressure and boxsize
-    //shader.SetFloat()
 
     private void OnDrawGizmos()
     {

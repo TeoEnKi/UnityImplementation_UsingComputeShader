@@ -1771,7 +1771,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: fc4286aa766105743a768c225f304569, type: 2}
+  - {fileID: 2100000, guid: aa912a6848bae6d4a828ae3a4eaa6a2a, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1810,7 +1810,7 @@ Transform:
   m_GameObject: {fileID: 853147386}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 19.820112, y: 3.356381, z: -4.6758957}
+  m_LocalPosition: {x: 41.05, y: 3.356381, z: 21.73}
   m_LocalScale: {x: 2.9445, y: 2.9445, z: 2.9445}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1828,10 +1828,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eba8e5153e2c8f24cb2ce132e86cc6e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enableBall: 0
+  sph: {fileID: 1232504767}
   moveSpeed: 5
   ySpeed: 5
-  y: 0
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -2219,7 +2218,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Disable Ball
+  m_text: Enable Ball
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2370,13 +2369,13 @@ MonoBehaviour:
   particleMaterial: {fileID: 2100000, guid: e3919978da2d4c54b90038920196aa25, type: 2}
   shader: {fileID: 7200000, guid: 1dcfe71ec55b0604193107253f45d34f, type: 3}
   particles: []
-  gravity: 0.1
-  boundDamping: 0
-  viscosityStrength: 0
-  pressureMultiplier: 0
+  gravity: 1.65
+  boundDamping: -0.406
+  viscosityStrength: 1
+  pressureMultiplier: 100
   particleMass: 1
-  restingDensity: 0.33
-  timeStep: 0.09
+  restingDensity: 0.12
+  timeStep: 0.007
 --- !u!4 &1232504768
 Transform:
   m_ObjectHideFlags: 0

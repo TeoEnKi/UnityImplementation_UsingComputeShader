@@ -18,9 +18,17 @@ struct Particle
 
 RWStructuredBuffer<Particle> particles;
 
+//for the big ball to hit the water(user input part)
+bool sphereEnabled = false;
+float sphereSpeedXZ;
+float sphereSpeedY;
+float3 spherePos;
+float sphereRadius;
+
 //render
 float renderRadius;
 
+//variables to compute particle properties
 float particleMass;
 float pressureMultiplier;
 float viscosityStrength;
@@ -97,6 +105,23 @@ void Integrate(uint3 id: SV_DISPATCHTHREADID) {
     //then velocity to position
     float3 vel = particles[id.x].velocity;// +((particles[id.x].currentForce / particleMass));
 
+    //when ball collide with spehre, change the velo
+    if (sphereEnabled){
+        float3 collisionDir = particles[id.x].position - spherePos;
+        float collisionLength = length(collisionDir);
+        //get magnitude and check if it's "hit"
+        if (collisionLength < sphereRadius)
+        {
+            //normalise the direction and scale using the speed
+            collisionDir /= collisionLength;
+            collisionDir.x *= sphereSpeedXZ;
+            collisionDir.z *= sphereSpeedXZ;
+            collisionDir.y *= sphereSpeedY;
+
+            vel += collisionDir;
+        }
+    }
+
     float3 topRight = boxSize / 2;
     float3 bottomLeft = -boxSize / 2;
 
@@ -132,7 +157,6 @@ void Integrate(uint3 id: SV_DISPATCHTHREADID) {
         vel.z *= boundDamping;
         particles[id.x].position.z = topRight.z + boxSpawn.z - renderRadius;
     }
-
 
     particles[id.x].velocity = vel;
     particles[id.x].position += particles[id.x].velocity * timeStep;
