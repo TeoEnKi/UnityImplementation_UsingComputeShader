@@ -5,17 +5,8 @@ using UnityEngine.EventSystems;
 public class Boundary : MonoBehaviour
 {
     public Vector3 boxSize;
-    Vector3 boxSpawn;
-    SPH sph;
+    public Vector3 boxSpawn;
 
-    private void Awake()
-    {
-        sph = FindAnyObjectByType<SPH>();
-        if (sph != null )
-        {
-            boxSpawn = sph.spawnPoint;
-        }
-    }
     //creating the box
     private void OnDrawGizmos()
     {

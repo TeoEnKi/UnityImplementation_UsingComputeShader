@@ -1,0 +1,255 @@
+// Each #kernel tells which function to compile; you can have many kernels
+//kernel is like function
+#pragma kernel Integrate //Use the force of each particle to move particle
+#pragma kernel ComputeDensity
+#pragma kernel ComputePressureForce
+#pragma kernel ComputeViscosityForce
+#pragma kernel ExternalForces
+//#pragma kernel UpdateSpatialHash
+
+struct Particle
+{
+    float density;
+    float3 velocity;
+    float3 predictedPosition;
+    float3 position;
+
+};
+
+RWStructuredBuffer<Particle> particles;
+
+//render
+float renderRadius;
+
+float particleMass;
+float pressureMultiplier;
+float viscosityStrength;
+float restDensity;
+float boundDamping;
+float gravity;
+
+//intense power operations are expensive so they are calculated and stored into the variables
+float radius;
+float radius2; //r^2
+float radius3; //r^3
+float radius4; //r^4
+float radius5; //r^5
+float radius6; //r^6
+
+float pi;
+int particleLength;//totalparticles
+float timeStep;
+float3 boxSize;//so that the particles stay and bounce within the box
+float3 boxSpawn;
+
+//For calculating viscosity
+float SmoothKernPoly6(float dst, float radius)
+{
+    if (dst < radius)
+    {
+        //radius^3 * radius^6 = radius^9
+        float scale = 315 / (64 * pi * radius3 * radius6);
+        float v = radius * radius - dst * dst;
+        return v * v * v * scale;
+    }
+    return 0;
+}
+
+//interpolation
+float SpikyKernelPow2(float dst, float radius)
+{
+    if (dst <= radius)
+    {
+        float v = radius - dst;
+        float scale = 15 / (2 * pi * radius5);
+
+        return v * v * v * scale;
+    }
+    return 0;
+}
+
+//getting density gradient when calculating pressure
+float DerivativeSpikyPow2(float dst, float radius)
+{
+    if (dst <= radius)
+    {
+        float scale = 15 / (radius5 * pi);
+        float v = radius - dst;
+
+        return -v * v * scale;
+    }
+    return 0;
+}
+
+float PressureFromDensity(float density)
+{
+    return (density - restDensity) * pressureMultiplier;
+}
+
+//2 or more different particles can be assigned properties parallely
+[numthreads(50, 1, 1)]
+void Integrate(uint3 id: SV_DISPATCHTHREADID) {
+
+    if ((int)id.x >= particleLength) return;
+
+
+    //add acceleration (force over mass) to velocity 
+    //then velocity to position
+    float3 vel = particles[id.x].velocity;// +((particles[id.x].currentForce / particleMass));
+
+    float3 topRight = boxSize / 2;
+    float3 bottomLeft = -boxSize / 2;
+
+    //make sure particles are within bounds
+    //if particles hit the part of the box with the lower axis value
+    if (particles[id.x].position.x - renderRadius < bottomLeft.x + boxSpawn.x) {
+        vel.x *= boundDamping;
+        particles[id.x].position.x = bottomLeft.x + boxSpawn.x + renderRadius;
+    }
+
+    if (particles[id.x].position.y - renderRadius < bottomLeft.y + boxSpawn.y) {
+        vel.y *= boundDamping;
+        particles[id.x].position.y = bottomLeft.y + boxSpawn.y + renderRadius;
+    }
+
+    if (particles[id.x].position.z - renderRadius < bottomLeft.z + boxSpawn.z) {
+        vel.z *= boundDamping;
+        particles[id.x].position.z = bottomLeft.z + boxSpawn.z + renderRadius;
+    }
+    //if particles hit the part of the box with the higher axis value
+
+    if (particles[id.x].position.x + renderRadius > topRight.x + boxSpawn.x) {
+        vel.x *= boundDamping;
+        particles[id.x].position.x = topRight.x + boxSpawn.x - renderRadius;
+    }
+
+    if (particles[id.x].position.y + renderRadius > topRight.y + boxSpawn.y) {
+        vel.y *= boundDamping;
+        particles[id.x].position.y = topRight.y + boxSpawn.y - renderRadius;
+    }
+
+    if (particles[id.x].position.z + renderRadius > topRight.z + boxSpawn.z) {
+        vel.z *= boundDamping;
+        particles[id.x].position.z = topRight.z + boxSpawn.z - renderRadius;
+    }
+
+
+    particles[id.x].velocity = vel;
+    particles[id.x].position += particles[id.x].velocity * timeStep;
+
+}
+
+
+[numthreads(50, 1, 1)]
+void ComputeDensity(uint3 id: SV_DISPATCHTHREADID) {
+
+    if ((int)id.x >= particleLength) return;
+
+    float3 pos = particles[id.x].predictedPosition;
+    float density = 0;
+
+    // Neighbour search
+    for (int i = 0; i < particleLength; i++)
+    {
+        float3 neighbourPos = particles[i].predictedPosition;
+        float3 offsetToNeighbour = neighbourPos - pos;
+        float sqrDstToNeighbour = dot(offsetToNeighbour, offsetToNeighbour);
+
+        // Skip if not within radius
+        if (sqrDstToNeighbour > radius2) continue;
+
+        // Calculate density and near density
+        float dst = sqrt(sqrDstToNeighbour);
+        density += SpikyKernelPow2(dst, radius) * particleMass;
+
+    }
+    particles[id.x].density = density;
+}
+
+[numthreads(50, 1, 1)]
+void ComputePressureForce(uint3 id: SV_DISPATCHTHREADID) {
+
+    if ((int)id.x >= particleLength) return;
+
+    // Calculate pressure
+    float density = particles[id.x].density;
+    float pressure = PressureFromDensity(density);
+    float3 pressureForce = 0;
+
+    float3 pos = particles[id.x].predictedPosition;
+
+    // Neighbour search
+    for (int i = 0; i < particleLength; i++)
+    {
+        // Skip if looking at self
+        if (i == (int)id.x) continue;
+
+        float3 neighbourPos = particles[i].predictedPosition;
+        float3 offsetToNeighbour = neighbourPos - pos;
+        float sqrDstToNeighbour = dot(offsetToNeighbour, offsetToNeighbour);
+
+        // Skip if not within radius
+        if (sqrDstToNeighbour > radius2) continue;
+
+        // Calculate pressure force
+        float densityNeighbour = particles[i].density;
+        float neighbourPressure = PressureFromDensity(densityNeighbour);
+
+        float sharedPressure = (pressure + neighbourPressure) / 2;
+
+        float dst = sqrt(sqrDstToNeighbour);
+        float3 dir = dst > 0 ? offsetToNeighbour / dst : float3(0, 1, 0);
+
+        pressureForce += dir * sharedPressure * particleMass * DerivativeSpikyPow2(dst, radius) / densityNeighbour;
+
+    }
+
+    float3 acceleration = pressureForce / density;
+
+    particles[id.x].velocity += acceleration;
+}
+
+[numthreads(50, 1, 1)]
+void ComputeViscosityForce(uint3 id: SV_DISPATCHTHREADID) {
+
+    if ((int)id.x >= particleLength) return;
+
+    float3 viscosityForce = 0;
+    float3 velocity = particles[id.x].velocity;
+
+    float3 pos = particles[id.x].predictedPosition;
+
+    // Neighbour search
+    for (int i = 0; i < particleLength; i++)
+    {
+        // Skip if looking at self
+        if (i == (int)id.x) continue;
+
+        float3 neighbourPos = particles[i].predictedPosition;
+        float3 offsetToNeighbour = neighbourPos - pos;
+        float sqrDstToNeighbour = dot(offsetToNeighbour, offsetToNeighbour);
+
+        // Skip if not within radius
+        if (sqrDstToNeighbour > radius2) continue;
+
+        // Calculate viscosity force
+        float dst = sqrt(sqrDstToNeighbour);
+        float3 neighbourVelocity = particles[i].velocity;
+        //the closer the particles, the more friction and less viscosity force
+        viscosityForce += (neighbourVelocity - velocity) * SmoothKernPoly6(dst, radius);
+
+    }
+    particles[id.x].velocity += viscosityForce * viscosityStrength * particleMass;
+}
+
+[numthreads(50, 1, 1)]
+void ExternalForces(uint3 id: SV_DISPATCHTHREADID)
+{
+    if ((int)id.x >= particleLength) return;
+
+    // gravity
+    particles[id.x].velocity += float3(0, -gravity, 0);
+
+    // update Predict
+    particles[id.x].predictedPosition = particles[id.x].position + particles[id.x].velocity * 1 / 120.0;
+}

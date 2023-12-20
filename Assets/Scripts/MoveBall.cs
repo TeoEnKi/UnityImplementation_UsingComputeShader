@@ -15,8 +15,6 @@ public class MoveBall : MonoBehaviour
     private Camera mainCamera;
     private float CameraZDistance;
 
-    private float counter = 0;
-
     Vector3 oldPos;
 
     void Start()
