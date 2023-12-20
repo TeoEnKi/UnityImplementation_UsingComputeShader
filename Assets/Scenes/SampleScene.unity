@@ -156,7 +156,7 @@ RectTransform:
   m_Father: {fileID: 125990847}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -880,7 +880,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &271749546
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1147,7 +1147,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &379983493
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1352,7 +1352,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 761825180}
         m_TargetAssemblyTypeName: Boundary, Assembly-CSharp
         m_MethodName: ChangeBoundarySize
         m_Mode: 1
@@ -1618,7 +1618,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2591f9c685983f04188987b8bd93f19e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  boxSize: {x: 50, y: 50, z: 50}
+  boxSize: {x: 100, y: 100, z: 100}
   boxSpawn: {x: 0, y: -6.41, z: 0}
 --- !u!4 &761825181
 Transform:
@@ -1668,7 +1668,7 @@ RectTransform:
   m_Father: {fileID: 1263223093}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -1747,7 +1747,7 @@ SphereCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
@@ -1758,7 +1758,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 853147386}
-  m_Enabled: 0
+  m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -1811,7 +1811,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 41.05, y: 3.356381, z: 21.73}
-  m_LocalScale: {x: 2.9445, y: 2.9445, z: 2.9445}
+  m_LocalScale: {x: 20, y: 20, z: 20}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -1828,9 +1828,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eba8e5153e2c8f24cb2ce132e86cc6e9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sph: {fileID: 1232504767}
-  moveSpeed: 5
-  ySpeed: 5
+  moveSpeed: 15
+  ySpeed: 10
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -2075,7 +2074,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &990401439
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2360,8 +2359,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1c3d472b29bd30c41a03c1428dce595c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  moveball: {fileID: 853147391}
   showSpheres: 1
-  numToSpawn: {x: 10, y: 10, z: 1}
+  numToSpawn: {x: 16, y: 16, z: 1}
   spawnCenter: {x: 0, y: 0, z: 0}
   particleRadius: 3
   particleMesh: {fileID: 2540817853737639666, guid: b223c0287a90e3e4cb0ae244dc788045, type: 3}
@@ -2371,8 +2371,8 @@ MonoBehaviour:
   particles: []
   gravity: 1.65
   boundDamping: -0.406
-  viscosityStrength: 1
-  pressureMultiplier: 100
+  viscosityStrength: 0.72
+  pressureMultiplier: 300
   particleMass: 1
   restingDensity: 0.12
   timeStep: 0.007
@@ -2846,7 +2846,7 @@ RectTransform:
   m_Father: {fileID: 1812739393}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -3043,7 +3043,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 761825180}
         m_TargetAssemblyTypeName: Boundary, Assembly-CSharp
         m_MethodName: ChangeBoundarySize
         m_Mode: 1
@@ -3230,7 +3230,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 761825180}
         m_TargetAssemblyTypeName: Boundary, Assembly-CSharp
         m_MethodName: ChangeBoundarySize
         m_Mode: 1
@@ -3516,7 +3516,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &2068378657
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3666,7 +3666,7 @@ RectTransform:
   m_Father: {fileID: 1225060598}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 20, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
