@@ -5,9 +5,7 @@
 #pragma kernel ComputePressureForce
 #pragma kernel ComputeViscosityForce
 #pragma kernel ExternalForces
-#pragma kernel HashParticles
-#pragma kernel BitonicSort
-#pragma kernel CalculateCellOffset;
+//#pragma kernel UpdateSpatialHash
 
 struct Particle
 {
@@ -19,9 +17,6 @@ struct Particle
 };
 
 RWStructuredBuffer<Particle> particles;
-RWStructuredBuffer<uint> particleIndices;
-RWStructuredBuffer<uint> particleCellIndices;
-RWStructuredBuffer<uint> cellOffsets;
 
 //for the big ball to hit the water(user input part)
 bool sphereEnabled = false;
@@ -50,78 +45,11 @@ float radius5; //r^5
 float radius6; //r^6
 
 float pi;
-uint particleLength;//totalparticles
+int particleLength;//totalparticles
 float timeStep;
 float3 boxSize;//so that the particles stay and bounce within the box
 float3 boxSpawn;
 
-//Sorting variables (bitonic)
-int block;
-int dim;
-
-//for optimisation
-//return's particle's cell positionof that boundary
-int3 GetCell(float3 position) {
-    //ensures no negative cell ids
-    float3 halfS = boxSize / 2;
-    return int3((position.x + halfS.x) / radius, (position.y + halfS.y) / radius, (position.z + halfS.z) / radius);
-}
-
-//hashs the cellID
-inline uint HashCell(in int3 cellIndex) {
-
-    //prime numbers for uniqueness
-    const uint p1 = 73856093;
-    const uint p2 = 19349663;
-    const uint p3 = 19349663;
-
-    int n = p1 * cellIndex + p2 * cellIndex + p3 * cellIndex;
-    n %= particleLength;
-
-    return n;
-}
-
-[numthreads(256, 1, 1)]
-void HashParticles(uint3 id: SV_DISPATCHTHREADID) {
-
-    cellOffsets[id.x] = 99999999;
-
-    uint particleIndex = particleIndices[id.x];
-
-    particleCellIndices[particleIndex] = HashCell(GetCell(particles[particleIndex].position));
-}
-
-[numthreads(256, 1, 1)]
-void BitonicSort(uint3 id: SV_DISPATCHTHREADID) {
-
-    uint i = id.x +id.y * 256 * 1024;
-    uint j = i * block;
-
-    if (j < i || i >= particleLength) return;
-
-    uint key_i = particleIndices[i];
-    uint key_j = particleIndices[j];
-    float value_i = particleCellIndices[i];
-    float value_j = particleCellIndices[j];
-
-    float diff = (value_i) * ((i & dim == 0 ? 1 : -1));
-    if (diff > 0) 
-    {
-        particleIndices[i] = key_j;
-        particleIndices[j] = key_i;
-    }
-}
-
-[numthreads(256, 1, 1)]
-void CalculateCellOffset(uint3 id: SV_DISPATCHTHREADID) {
-
-    uint particleIndex = particleIndices[id.x];
-    uint cellIndex = particleCellIndices[particleIndex];
-
-    //sets minimum value at a selectead position
-    InterlockedMin(cellOffsets[cellIndex], id.x);
-
-}
 //For calculating viscosity
 float SmoothKernPoly6(float dst, float radius)
 {
@@ -166,13 +94,11 @@ float PressureFromDensity(float density)
     return (density - restDensity) * pressureMultiplier;
 }
 
-
-
 //2 or more different particles can be assigned properties parallely
-[numthreads(256, 1, 1)]
+[numthreads(50, 1, 1)]
 void Integrate(uint3 id: SV_DISPATCHTHREADID) {
 
-    if (id.x >= particleLength) return;
+    if ((int)id.x >= particleLength) return;
 
 
     //add acceleration (force over mass) to velocity 
@@ -238,16 +164,16 @@ void Integrate(uint3 id: SV_DISPATCHTHREADID) {
 }
 
 
-[numthreads(256, 1, 1)]
+[numthreads(50, 1, 1)]
 void ComputeDensity(uint3 id: SV_DISPATCHTHREADID) {
 
-    if (id.x >= particleLength) return;
+    if ((int)id.x >= particleLength) return;
 
     float3 pos = particles[id.x].predictedPosition;
     float density = 0;
 
     // Neighbour search
-    for (int i = 0; i < (int)particleLength; i++)
+    for (int i = 0; i < particleLength; i++)
     {
         float3 neighbourPos = particles[i].predictedPosition;
         float3 offsetToNeighbour = neighbourPos - pos;
@@ -264,10 +190,10 @@ void ComputeDensity(uint3 id: SV_DISPATCHTHREADID) {
     particles[id.x].density = density;
 }
 
-[numthreads(256, 1, 1)]
+[numthreads(50, 1, 1)]
 void ComputePressureForce(uint3 id: SV_DISPATCHTHREADID) {
 
-    if (id.x >= particleLength) return;
+    if ((int)id.x >= particleLength) return;
 
     // Calculate pressure
     float density = particles[id.x].density;
@@ -277,7 +203,7 @@ void ComputePressureForce(uint3 id: SV_DISPATCHTHREADID) {
     float3 pos = particles[id.x].predictedPosition;
 
     // Neighbour search
-    for (int i = 0; i < (int)particleLength; i++)
+    for (int i = 0; i < particleLength; i++)
     {
         // Skip if looking at self
         if (i == (int)id.x) continue;
@@ -307,10 +233,10 @@ void ComputePressureForce(uint3 id: SV_DISPATCHTHREADID) {
     particles[id.x].velocity += acceleration;
 }
 
-[numthreads(256, 1, 1)]
+[numthreads(50, 1, 1)]
 void ComputeViscosityForce(uint3 id: SV_DISPATCHTHREADID) {
 
-    if (id.x >= particleLength) return;
+    if ((int)id.x >= particleLength) return;
 
     float3 viscosityForce = 0;
     float3 velocity = particles[id.x].velocity;
@@ -318,7 +244,7 @@ void ComputeViscosityForce(uint3 id: SV_DISPATCHTHREADID) {
     float3 pos = particles[id.x].predictedPosition;
 
     // Neighbour search
-    for (int i = 0; i < (int)particleLength; i++)
+    for (int i = 0; i < particleLength; i++)
     {
         // Skip if looking at self
         if (i == (int)id.x) continue;
@@ -340,10 +266,10 @@ void ComputeViscosityForce(uint3 id: SV_DISPATCHTHREADID) {
     particles[id.x].velocity += viscosityForce * viscosityStrength * particleMass;
 }
 
-[numthreads(256, 1, 1)]
+[numthreads(50, 1, 1)]
 void ExternalForces(uint3 id: SV_DISPATCHTHREADID)
 {
-    if (id.x >= particleLength) return;
+    if ((int)id.x >= particleLength) return;
 
     // gravity
     particles[id.x].velocity += float3(0, -gravity, 0);
