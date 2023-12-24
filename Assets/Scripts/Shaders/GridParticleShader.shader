@@ -8,8 +8,6 @@ Shader "Custom/GridParticleShader"
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
 
-        _Density("Density", Range(0,100)) = 1.0
-
     }
     SubShader
     {
@@ -30,8 +28,6 @@ Shader "Custom/GridParticleShader"
         half _Glossiness;
         half _Metallic;
         fixed4 _Color;  // vector (r,g,b,a)
-        //to declare density
-        float _Density;
         float _Size;
 
         struct Input

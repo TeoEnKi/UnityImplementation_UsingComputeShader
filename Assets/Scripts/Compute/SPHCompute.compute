@@ -144,17 +144,17 @@ void Integrate(uint3 id: SV_DISPATCHTHREADID) {
     //if particles hit the part of the box with the higher axis value
 
     if (particles[id.x].position.x + renderRadius > topRight.x + boxSpawn.x) {
-        vel.x *= boundDamping;
+        vel.x *= -boundDamping;
         particles[id.x].position.x = topRight.x + boxSpawn.x - renderRadius;
     }
 
     if (particles[id.x].position.y + renderRadius > topRight.y + boxSpawn.y) {
-        vel.y *= boundDamping;
+        vel.y *= -boundDamping;
         particles[id.x].position.y = topRight.y + boxSpawn.y - renderRadius;
     }
 
     if (particles[id.x].position.z + renderRadius > topRight.z + boxSpawn.z) {
-        vel.z *= boundDamping;
+        vel.z *= -boundDamping;
         particles[id.x].position.z = topRight.z + boxSpawn.z - renderRadius;
     }
 
